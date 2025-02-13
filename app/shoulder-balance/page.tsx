@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useCountdown } from "@/hooks/use-countdown"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Exercise, ProgressEntry } from "@/types"
+import { useAuth } from "@/contexts/auth-context"
 
 const shoulderFunctions = [
   "Flexion",
@@ -93,12 +94,15 @@ const generateInitialExercises = (): Exercise[] => {
 }
 
 export default function ShoulderBalance() {
+  const { user, loading: authLoading } = useAuth()
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [bodyAreaFilter, setBodyAreaFilter] = useState("all")
+  const [functionFilter, setFunctionFilter] = useState("all")
   const [rangeFilter, setRangeFilter] = useState("all")
   const [isAddExerciseOpen, setIsAddExerciseOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [typeOfMovementFilter, setTypeOfMovementFilter] = useState("all")
   const [newExercise, setNewExercise] = useState<Omit<Exercise, "id" | "completed" | "progress" | "reappearInterval">>({
     exercises: [
       {
@@ -121,8 +125,6 @@ export default function ShoulderBalance() {
       },
     ],
   })
-  const [functionFilter, setFunctionFilter] = useState("all")
-  const [typeOfMovementFilter, setTypeOfMovementFilter] = useState("all")
   const { stopCountdown } = useCountdown("shoulder")
 
   useEffect(() => {
@@ -132,10 +134,6 @@ export default function ShoulderBalance() {
         const storedExercises = localStorage.getItem("shoulderExercises")
         if (storedExercises) {
           setExercises(JSON.parse(storedExercises))
-        } else {
-          const initialExercises = generateInitialExercises()
-          setExercises(initialExercises)
-          localStorage.setItem("shoulderExercises", JSON.stringify(initialExercises))
         }
       } catch (error) {
         setError("Failed to load shoulder exercises. Please try again.")
@@ -347,6 +345,22 @@ export default function ShoulderBalance() {
       ...newExercise,
       exercises: updatedExercises
     });
+  }
+
+  if (authLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (!user) {
+    return <div>Please log in</div>
+  }
+
+  if (isLoading) {
+    return <div>Loading exercises...</div>
+  }
+
+  if (error) {
+    return <div>{error}</div>
   }
 
   return (
